@@ -2,13 +2,14 @@ Package: sfarrow
 Title: Read/Write Simple Feature Objects ('sf') with 'Apache' 'Arrow'
 Version: 0.4.2
 Date: 2021-10-25
-Authors@R: 
+Authors@R: c(
     person(given = "Chris",
            family = "Jochem",
            role = c("aut", "cre"),
            email = "w.c.jochem@soton.ac.uk",
            comment = c(ORCID = "0000-0003-2192-5988")),
     person("David", "Wells", role = c("ctb"), email = "davidwells5050@gmail.com")
+)
 Description: Support for reading/writing simple feature ('sf') spatial objects from/to 'Parquet' files. 'Parquet' files are an open-source, column-oriented data storage format from Apache (<https://parquet.apache.org/>), now popular across programming languages. This implementation converts simple feature list geometries into well-known binary format for use by 'arrow', and coordinate reference system information is maintained in a standard metadata format.
 License: MIT + file LICENSE
 URL: https://github.com/wcjochem/sfarrow, https://wcjochem.github.io/sfarrow/
