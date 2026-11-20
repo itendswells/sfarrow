@@ -9,14 +9,6 @@
 #' @return JSON formatted list with geo-metadata
 #' @keywords internal
 create_metadata <- function(df){
-  warning(strwrap("This is an initial implementation of Parquet/Feather file support
-                  and geo metadata. This is tracking version 0.1.0 of the metadata
-                  (https://github.com/geopandas/geo-arrow-spec). This metadata
-                  specification may change and does not yet make stability promises.
-                  We do not yet recommend using this in a production setting unless
-                  you are able to rewrite your Parquet/Feather files.",
-                  prefix = "\n", initial = ""
-         ), call.=FALSE)
 
   # reference: https://github.com/geopandas/geo-arrow-spec
   geom_cols <- lapply(df, function(i) inherits(i, "sfc"))
@@ -24,15 +16,47 @@ create_metadata <- function(df){
   col_meta <- list()
 
   for(col in geom_cols){
-    col_meta[[col]] <- list(crs = sf::st_crs(df[[col]])$wkt,
-                            encoding = "WKB",
-                            bbox = as.numeric(sf::st_bbox(df[[col]])))
+    geom_types <- as.character(unique(sf::st_geometry_type(df[[col]])))
+    # multiple geometry types in a single column is messing something up in the WKB that I can't figure out
+    # I think it should be possible but adding this in for now
+    if (length(geom_types) > 1) {
+      stop("Multiple geometry types in the same column is not supported.")
+    }
+    for (i in 1:length(geom_types)) {
+      geom_type <- geom_types[[i]]
+      if (geom_type == "POINT") {
+        geom_types[[i]] <- "Point"
+      } else if (geom_type == "LINESTRING") {
+        geom_types[[i]] <- "LineString"
+      } else if (geom_type == "POLYGON") {
+        geom_types[[i]] <- "Polygon"
+      } else if (geom_type == "MULTIPOINT") {
+        geom_types[[i]] <- "MultiPoint"
+      } else if (geom_type == "MULTILINESTRING") {
+        geom_types[[i]] <- "MultiLineString"
+      } else if (geom_type == "MULTIPOLYGON") {
+        geom_types[[i]] <- "MultiPolygon"
+      } else if (geom_type == "GEOMETRYCOLLECTION") {
+        geom_types[[i]] <- "GeometryCollection"
+      } else {
+        stop(sprintf("Geometry contains unsupported type (%s). Supported geometry types are: GEOMETRYCOLLECTION, POINT, LINESTRING, POLYGON, MULTIPOINT, MULTILINESTRING, and MULTIPOLYGON."))
+      }
+    }
+
+    col_meta[[col]] <- list(
+      crs = jsonlite::parse_json(sf::st_crs(df[[col]], parameters = TRUE)$ProjJson),
+      encoding = "WKB",
+      geometry_types = I(geom_types),
+      bbox = as.numeric(sf::st_bbox(df[[col]]))
+    )
   }
 
-  geo_metadata <- list(primary_column = attr(df, "sf_column"),
-                       columns = col_meta,
-                       schema_version = "0.1.0",
-                       creator = list(library="sfarrow"))
+  geo_metadata <- list(
+    primary_column = attr(df, "sf_column"),
+    columns = col_meta,
+    version = "2.0.0",
+    creator = list(library="sfarrow")
+  )
 
   return(jsonlite::toJSON(geo_metadata, auto_unbox=TRUE))
 }
@@ -119,7 +143,7 @@ arrow_to_sf <- function(tbl, metadata){
 
   for(col in geom_cols){
     tbl[[col]] <- sf::st_as_sfc(tbl[[col]],
-                                crs = sf::st_crs(metadata$columns[[col]]$crs))
+                                crs = sf::st_crs(metadata$columns[[col]]$crs$id$code))
   }
 
   tbl <- sf::st_sf(tbl, sf_column_name = primary_geom)
