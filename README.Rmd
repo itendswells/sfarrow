@@ -17,6 +17,24 @@ output:
 
 # sfarrow: Read/Write Simple Feature Objects (`sf`) with 'Apache' 'Arrow'
 
+This is a fork of [Chris Jochem's sfarrow package](https://github.com/wcjochem/sfarrow) that updates the [GeoParquet](https://geoparquet.org/) metadata specification to [v2.0.0](https://geoparquet.org/releases/v2.0.0/schema.json).
+
+## Installation
+
+This fork can be installed from Github with: 
+
+```{r eval=FALSE}
+pak::pak("itendswells/sfarrow")
+```
+
+Load the library to begin using it.
+
+```{r eval=FALSE}
+library(sfarrow)
+```
+
+## sfarrow
+
 `sfarrow` is a package for reading and writing Parquet and Feather files with
 `sf` objects using `arrow` in `R`.
 
@@ -38,26 +56,6 @@ information is maintained in a standard metadata format
 Note to users: this metadata format is not yet stable for production uses and
 may change in the future.
 
-## Installation
-
-`sfarrow` is available through CRAN with:
-
-```{r, eval=FALSE}
-install.packages('sfarrow')
-```
-
-or it can be installed from Github with: 
-
-```{r eval=FALSE}
-devtools::install_github("wcjochem/sfarrow@main")
-```
-
-Load the library to begin using it.
-
-```{r}
-library(sfarrow)
-```
-
 ### `arrow` package
 
 The installation requires the Arrow library which should be installed with the
@@ -69,7 +67,7 @@ additional steps to enable full support of that library. Please refer to the
 ## Basic usage
 
 Reading Parquet data of spatial files created with Python `GeoPandas`.
-```{r}
+```{r eval=FALSE}
 # load Natural Earth low-res dataset. 
 # Created in Python with geopandas.to_parquet()
 path <- system.file("extdata", "world.parquet", package = "sfarrow")
@@ -82,7 +80,7 @@ plot(sf::st_geometry(world))
 
 Writing `sf` objects to Parquet format files. These Parquet files created with
 `sfarrow` can be read within Python using `GeoPandas`.
-```{r}
+```{r eval=FALSE}
 nc <- sf::st_read(system.file("shape/nc.shp", package="sf"), quiet=TRUE)
 
 st_write_parquet(obj=nc, dsn=file.path(tempdir(), "nc.parquet"))
